@@ -33,6 +33,9 @@ Establishes the statistical character of the series *before* any feature is engi
 These point to a clear prior: magnitude ≈ unpredictable, direction possibly faint, volatility the most persistent property.
 
 ### 2. The CORE feature set (15 features)
+
+Approach 1
+
 A deliberately small, interpretable set. Every feature is trailing-only (no look-ahead) and price enters as ratios to stay stationary across the 2010→2024 range. Collinear duplicates are dropped (e.g. one stochastic, `rsi_14` over `rsi_30`).
 
 | Family | Features | Rationale |
@@ -45,6 +48,28 @@ A deliberately small, interpretable set. Every feature is trailing-only (no look
 | Interaction | `ret3_x_vol7` | the only cross-term with real EDA correlation |
 
 Screening (|correlation| vs next-day return + train-only Random Forest importance) confirms no single feature exceeds ~0.07 |corr| and importances are near-uniform — the signal is weak and *aggregate*, which is itself the finding and why parsimony is safe.
+
+Approach 2
+## Feature Engineering: The Two-Stage Consensus Approach
+
+Rather than relying on human intuition, the pipeline subjects raw features to strict statistical tests followed by a multi-model voting system. This results in a robust, algorithm-agnostic set of 23 core features.
+
+### i. The Two-Stage Pipeline
+
+| Pipeline Phase | Core Mechanism | Rationale |
+| :--- | :--- | :--- |
+| **1. Statistical Filtering** | Pearson (<0.90), ADF Test, Mutual Information | Aggressively prunes redundant, non-stationary, and low-information variables before model training. |
+| **2. Consensus Voting** | Aggregated Importance across 6 ML Models | Prevents overfitting to any single algorithm's bias by demanding cross-model agreement. |
+| **3. Final Core Signal** | $\ge$ 3/6 Vote Threshold | Isolates the 23 most universally predictive features (e.g., `LogReturn`, `Momentum_14d`). |
+
+### ii. The Multi-Model Consensus Voting System
+
+To eliminate the structural biases of any single machine learning algorithm, the pipeline employs a strict democratic voting mechanism:
+
+* **Diverse Evaluation:** Features are tested across 6 distinct ML architectures to prevent single-model bias.
+* **Voting Mechanism:** Each model awards exactly one vote to its top 20 most important features.
+* **Consensus Threshold:** A candidate feature must secure $\ge$ 3 out of 6 possible votes to survive.
+* **Robust Outcome:** This strict majority-rules approach distills the data into 23 core features, guaranteeing a final signal that is resilient, transferable, and highly resistant to overfitting.
 
 ### 3. Models and targets
 A leakage-safe chronological split (train ≤ 2023-01-31, 1-day embargo, test Feb–Jul 2023) and one consistent scorecard across:
